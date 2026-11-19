@@ -20,8 +20,15 @@ class CausiloModel(BaseModel):
     """
 
     name: str = "causilo"
+    min_context: int = 1
 
-    def __init__(self, device: str | None = None, classes: np.ndarray | None = None, **kwargs: Any) -> None:
+    def __init__(
+        self,
+        device: str | None = None,
+        classes: np.ndarray | None = None,
+        **kwargs: Any,
+    ) -> None:
+        """Initialize the Causilo wrapper."""
         super().__init__(device=device, classes=classes)
         from causilo import CausiloClassifier
 
@@ -34,7 +41,9 @@ class CausiloModel(BaseModel):
         self._model.fit(X, y)
 
     def predict(self, X: pd.DataFrame) -> np.ndarray:
+        """Predict class labels."""
         return self._model.predict(X).astype(int)
 
     def predict_proba(self, X: pd.DataFrame) -> np.ndarray:
+        """Predict class probabilities."""
         return self._model.predict_proba(X)

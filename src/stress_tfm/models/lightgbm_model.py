@@ -20,7 +20,7 @@ class LightGBMModel(BaseModel):
     """
 
     name: str = "lightgbm"
-    min_context: int = 2  # need at least 1 sample per class
+    min_context: int = 1  # need at least 1 sample per class
 
     def __init__(
         self,
@@ -32,6 +32,7 @@ class LightGBMModel(BaseModel):
         random_state: int = 42,
         **kwargs: int | float | str,
     ) -> None:
+        """Initialize the LightGBM wrapper."""
         super().__init__(device=device, classes=classes)
         lgb_device = "gpu" if device == "cuda" else (device or "cpu")
         self._model = LGBMClassifier(
@@ -47,6 +48,7 @@ class LightGBMModel(BaseModel):
 
     @property
     def classes_(self) -> np.ndarray:
+        """Class labels in the order of predict_proba columns."""
         if self._classes is not None:
             return self._classes
         if not self._fitted:
@@ -62,9 +64,11 @@ class LightGBMModel(BaseModel):
         self._fitted = True
 
     def predict(self, X: pd.DataFrame) -> np.ndarray:
+        """Predict class labels."""
         return self._model.predict(X).astype(int)
 
     def predict_proba(self, X: pd.DataFrame) -> np.ndarray:
+        """Predict class probabilities."""
         return self._model.predict_proba(X)
 
     def save(self, path: str | Path) -> None:

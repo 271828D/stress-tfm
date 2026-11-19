@@ -1,4 +1,4 @@
-"""Central configuration for the StressID-TFM benchmark."""
+"""Central configuration for the stress-tfm benchmark."""
 
 from pathlib import Path
 
