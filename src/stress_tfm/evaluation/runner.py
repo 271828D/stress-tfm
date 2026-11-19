@@ -146,8 +146,17 @@ def run_benchmark(
                         ctx_df, test_df, feature_cols, target_col
                     )
 
+                    # ─── NEW: Skip if context has < 2 unique classes ──
+                    if len(np.unique(y_ctx)) < 2:
+                        logger.warning(
+                            f"[{task}] seed={seed} n_ctx={n_ctx}: "
+                            f"context has only {len(np.unique(y_ctx))} class(es). Skipping all models."
+                        )
+                        pbar.update(len(model_names))
+                        continue
+
                     # ─── Save split data (once per seed+ctx, not per model) ──
-                    if name == model_names[0]:  # save only once
+                    if name == model_names[0]:
                         save_split_data(
                             output_dir=task_dir,
                             seed=seed,
@@ -208,7 +217,9 @@ def run_benchmark(
                             X_test=X_test,
                         )
                     except Exception:
-                        logger.exception(f"Failed to save predictions for [{task}] {name}")
+                        logger.exception(
+                            f"Failed to save predictions for [{task}] {name}"
+                        )
 
                     # ─── Save model artifact (LightGBM only) ────
                     if hasattr(model, "save"):
