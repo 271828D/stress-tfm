@@ -1,0 +1,81 @@
+[project]
+name = "stress-tfm"
+version = "0.1.0"
+description = "Data efficiency of tabular foundation models for physiological stress detection"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "pandas",
+    "numpy",
+    "scipy",
+    "pyarrow",
+    "neurokit2",
+    "seaborn",
+    "matplotlib",
+    "tqdm",
+    "tabpfn>=9.2.0",
+    "tabicl>=2.2.0",
+    "tabdpt>=1.3.1",
+    "causilo>=1.0.3",
+    "scikit-learn>=1.9.1",
+    "structured-data-models",
+    "lightgbm>=4.7.0",
+]
+
+[dependency-groups]
+dev = [
+    "ruff",
+    "mypy",
+    "pre-commit",
+    "pytest",
+    "jupyter>=1.1.1",
+    "polars>=2.1.0",
+]
+
+[project.scripts]
+stress-tfm = "stress_tfm.cli:main"
+
+[build-system]
+requires = ["uv_build>=0.13.1,<0.14"]
+build-backend = "uv_build"
+
+# ─── Ruff ───────────────────────────────────────────────
+line-length = 88
+target-version = "py312"
+src = ["src"]
+
+[tool.ruff.lint]
+select = [
+    "E", "W", "F",
+    "I",
+    "B",
+    "UP",
+    "SIM",
+    "C4",
+    "N",
+    "D",
+]
+ignore = ["E501", "N803", "N806"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["stress_tfm"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["D"]
+
+[tool.ruff.format]
+quote-style = "double"
+
+# ─── Mypy ───────────────────────────────────────────────
+[tool.mypy]
+python_version = "3.12"
+strict = true
+disallow_any_generics = true
+namespace_packages = true
+ignore_missing_imports = true
+
+[tool.uv.sources]
+structured-data-models = { git = "https://github.com/NVIDIA/structured-data-models.git" }

@@ -1,0 +1,25 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+uv.lock
+
+# Data
+data/raw/
+data/master_table.parquet
+data/splits_*.parquet
+
+# Results
+results/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# OS
+.DS_Store
