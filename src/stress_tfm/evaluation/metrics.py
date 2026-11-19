@@ -19,15 +19,11 @@ def compute_metrics(
     y_pred: np.ndarray,
     y_proba: np.ndarray,
 ) -> dict[str, float]:
-    """Calculate evaluation metrics for binary or multiclass classification.
-
-    Returns:
-        Dictionary with: f1, specificity (binary only), roc_auc.
-    """
+    """Calculate evaluation metrics for binary or multiclass classification."""
     n_classes = len(np.unique(y_true))
 
     if n_classes == 2:
-        avg = None
+        avg = "binary"
         tn, fp, fn, tp = confusion_matrix(y_true, y_pred).ravel()
         specificity = tn / (tn + fp) if (tn + fp) > 0 else 0.0
         roc_auc = roc_auc_score(y_true, y_proba[:, 1])
