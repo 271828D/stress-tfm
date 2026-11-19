@@ -65,7 +65,7 @@ def test_classes_raises_before_fit(
     """Edge case: accessing classes_ before fit (no constructor classes) raises."""
     model = LightGBMModel(device="cpu")
 
-    with pytest.raises(RuntimeError, match="classes_ not available"):
+    with pytest.raises(RuntimeError, match="must be fitted"):
         _ = model.classes_
 
 
