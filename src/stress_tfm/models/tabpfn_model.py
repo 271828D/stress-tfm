@@ -21,13 +21,20 @@ class TabPFNModel(BaseModel):
     """
 
     name: str = "tabpfn"
-    min_context: int = 1  # requires at least 1 labeled context row
+    min_context: int = 1
 
-    def __init__(self, device: str | None = None, classes: np.ndarray | None = None, **kwargs: Any) -> None:
+    def __init__(
+        self,
+        device: str | None = None,
+        classes: np.ndarray | None = None,
+        **kwargs: Any,
+    ) -> None:
+        """Initialize the TabPFN wrapper."""
         super().__init__(device=device, classes=classes)
         from tabpfn import TabPFNClassifier
 
         self._model = TabPFNClassifier(**kwargs)
+        self._context_classes: np.ndarray | None = None
 
     def fit(self, X: pd.DataFrame, y: np.ndarray) -> None:
         """Store context rows for ICL (no weight updates)."""
@@ -35,10 +42,24 @@ class TabPFNModel(BaseModel):
             self._classes = np.array(sorted(np.unique(y)))
         if len(X) == 0:
             raise RuntimeError("TabPFN requires at least 1 labeled context row.")
+        self._context_classes = np.array(sorted(np.unique(y)))
         self._model.fit(X, y)
 
     def predict(self, X: pd.DataFrame) -> np.ndarray:
+        """Predict class labels."""
         return self._model.predict(X).astype(int)
 
     def predict_proba(self, X: pd.DataFrame) -> np.ndarray:
-        return self._model.predict_proba(X)
+        """Predict class probabilities, aligned to self._classes."""
+        if self._classes is None or self._context_classes is None:
+            raise RuntimeError("fit() must be called before predict_proba().")
+        raw = self._model.predict_proba(X)
+
+        if raw.shape[1] == len(self._classes):
+            return raw
+
+        full = np.zeros((raw.shape[0], len(self._classes)))
+        for i, c in enumerate(self._context_classes):
+            col_idx = list(self._classes).index(int(c))
+            full[:, col_idx] = raw[:, i]
+        return full

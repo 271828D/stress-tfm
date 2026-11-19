@@ -1,4 +1,4 @@
-"""LightGBM classifier wrapper for the StressID-TFM benchmark."""
+"""LightGBM classifier wrapper."""
 
 from __future__ import annotations
 
@@ -20,7 +20,7 @@ class LightGBMModel(BaseModel):
     """
 
     name: str = "lightgbm"
-    min_context: int = 1  # need at least 1 sample per class
+    min_context: int = 1
 
     def __init__(
         self,
@@ -59,17 +59,31 @@ class LightGBMModel(BaseModel):
     def fit(self, X: pd.DataFrame, y: np.ndarray) -> None:
         """Train the LightGBM classifier."""
         if len(X) == 0:
-            raise RuntimeError("LightGBM cannot train on empty data. min_context=2.")
+            raise RuntimeError("LightGBM cannot train on empty data.")
         self._model.fit(X, y)
         self._fitted = True
 
     def predict(self, X: pd.DataFrame) -> np.ndarray:
         """Predict class labels."""
-        return self._model.predict(X).astype(int)
+        if self._classes is None:
+            raise RuntimeError("fit() must be called before predict().")
+        proba = self.predict_proba(X)
+        return self._classes[np.argmax(proba, axis=1)].astype(int)
 
     def predict_proba(self, X: pd.DataFrame) -> np.ndarray:
-        """Predict class probabilities."""
-        return self._model.predict_proba(X)
+        """Predict class probabilities, aligned to self._classes."""
+        if self._classes is None:
+            raise RuntimeError("fit() must be called before predict_proba().")
+        raw = self._model.predict_proba(X)
+
+        if raw.shape[1] == len(self._classes):
+            return raw
+
+        full = np.zeros((raw.shape[0], len(self._classes)))
+        for i, c in enumerate(self._model.classes_):
+            col_idx = list(self._classes).index(int(c))
+            full[:, col_idx] = raw[:, i]
+        return full
 
     def save(self, path: str | Path) -> None:
         """Persist the fitted model to disk."""

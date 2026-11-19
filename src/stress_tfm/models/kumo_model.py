@@ -20,7 +20,7 @@ class KumoModel(BaseModel):
     """
 
     name: str = "kumo"
-    min_context: int = 1  # Kumo requires at least 1 context row
+    min_context: int = 1
 
     def __init__(
         self,
@@ -30,6 +30,7 @@ class KumoModel(BaseModel):
         classes: np.ndarray | None = None,
         **kwargs: Any,
     ) -> None:
+        """Initialize the Kumo wrapper."""
         super().__init__(device=device, classes=classes)
         import sdm
         import torch
@@ -44,6 +45,7 @@ class KumoModel(BaseModel):
         self._num_estimators = num_estimators
         self._x_context: Any = None
         self._y_context: Any = None
+        self._context_classes: np.ndarray | None = None
 
     def _to_table(self, X: pd.DataFrame, y: np.ndarray | None = None) -> Any:
         """Convert DataFrame (+ optional target) to sdm.TableTensor."""
@@ -62,14 +64,18 @@ class KumoModel(BaseModel):
             self._classes = np.array(sorted(np.unique(y)))
 
         if len(X) == 0:
-            logger.warning("KumoModel.fit() called with empty context. Zero-shot not supported.")
+            logger.warning(
+                "KumoModel.fit() called with empty context. Zero-shot not supported."
+            )
             return
 
+        self._context_classes = np.array(sorted(np.unique(y)))
         table = self._to_table(X, y)
         self._x_context = table.drop_columns("_target")
         self._y_context = table["_target"]
 
     def predict(self, X: pd.DataFrame) -> np.ndarray:
+        """Predict class labels."""
         classes = self._classes
         if classes is None:
             raise RuntimeError("fit() must be called before predict().")
@@ -77,7 +83,7 @@ class KumoModel(BaseModel):
         return classes[np.argmax(proba, axis=1)].astype(int)
 
     def predict_proba(self, X: pd.DataFrame) -> np.ndarray:
-        """Predict class probabilities (single forward pass)."""
+        """Predict class probabilities, aligned to self._classes."""
         import torch
 
         x_ctx = self._x_context
@@ -104,4 +110,10 @@ class KumoModel(BaseModel):
             )
 
         proba_df = probs.to_pandas()
-        return proba_df[[str(c) for c in classes]].values
+
+        full = np.zeros((len(proba_df), len(classes)))
+        for i, c in enumerate(classes):
+            col_name = str(c)
+            if col_name in proba_df.columns:
+                full[:, i] = proba_df[col_name].values
+        return full
