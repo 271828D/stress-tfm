@@ -53,7 +53,8 @@ def prepare_split(
         target_col: Label column name.
 
     Returns:
-        SplitData on success, None if context has fewer than 2 unique classes.
+        SplitData on success, None only if the split itself fails.
+        Single-class contexts are valid (degenerate ICL conditions).
     """
     ctx_df, test_df, _, _ = split_context_test(
         df,
@@ -67,15 +68,6 @@ def prepare_split(
         feature_cols,
         target_col,
     )
-
-    if len(np.unique(y_ctx)) < 2:
-        logger.warning(
-            "seed=%d n_ctx=%d: context has %d class(es). Skipping.",
-            seed,
-            n_ctx,
-            len(np.unique(y_ctx)),
-        )
-        return None
 
     return SplitData(
         ctx_df=ctx_df,
