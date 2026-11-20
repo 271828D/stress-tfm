@@ -21,7 +21,10 @@ class TabDPTModel(BaseModel):
     """
 
     name: str = "tabdpt"
-    min_context: int = 1
+    # TabDPT's ensemble feature-permutation triggers a CUDA device-side
+    # assert on single-row context tensors (library bug in tabdpt/estimator.py).
+    # Setting min_context=2 lets the pipeline skip cleanly instead of crashing.
+    min_context: int = 2
 
     def __init__(
         self,
