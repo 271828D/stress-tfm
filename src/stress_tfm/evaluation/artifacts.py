@@ -1,4 +1,4 @@
-"""Save per-run artifacts for post-hoc analysis."""
+"""Save per-run artifacts (split data and predictions) to disk."""
 
 from __future__ import annotations
 
@@ -22,7 +22,19 @@ def save_split_data(
     y_context: np.ndarray,
     y_test: np.ndarray,
 ) -> None:
-    """Save the full split data (context + test) for one (seed, n_context) pair."""
+    """Save the full split data for one (seed, n_context) pair.
+
+    Args:
+        output_dir: Base output directory.
+        seed: Random seed.
+        n_context: Number of context subjects.
+        ctx_df: Raw context DataFrame.
+        test_df: Raw test DataFrame.
+        X_context: Context feature matrix.
+        X_test: Test feature matrix.
+        y_context: Context labels.
+        y_test: Test labels.
+    """
     split_dir = Path(output_dir) / "splits" / f"seed_{seed}_ctx_{n_context}"
     split_dir.mkdir(parents=True, exist_ok=True)
 
@@ -46,7 +58,7 @@ def save_split_data(
 
     full = pd.concat([ctx_out, test_out], ignore_index=True)
     full.to_csv(split_dir / "split_data.csv", index=False)
-    logger.debug(f"Saved split data: {split_dir}")
+    logger.debug("Saved split data: %s", split_dir)
 
 
 def save_predictions(
@@ -63,14 +75,13 @@ def save_predictions(
     """Save predictions for one model run.
 
     Args:
-        output_dir: Base output directory (task/feature_set encoded by caller).
+        output_dir: Base output directory (task-level, set by caller).
         model_name: Model identifier.
         seed: Random seed.
         n_context: Number of context subjects.
         y_test: True labels.
         y_pred: Predicted labels.
-        y_proba: Predicted probabilities.
-                 Binary: shape [n, 2]. Multi-class: shape [n, n_classes].
+        y_proba: Predicted probabilities. Shape [n, n_classes].
         file_ids: Optional file IDs for traceability.
         X_test: Optional feature DataFrame to include in output.
     """
@@ -93,4 +104,4 @@ def save_predictions(
         pred_df = pd.concat([pred_df, X_test.reset_index(drop=True)], axis=1)
 
     pred_df.to_csv(run_dir / "predictions.csv", index=False)
-    logger.debug(f"Saved predictions: {run_dir}")
+    logger.debug("Saved predictions: %s", run_dir)
