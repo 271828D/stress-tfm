@@ -7,12 +7,16 @@ from abc import ABC, abstractmethod
 import numpy as np
 import pandas as pd
 
+
 class BaseModel(ABC):
     """Uniform interface for all tabular foundation model wrappers."""
 
     name: str = "base"
+    min_context: int = 1
 
-    def __init__(self, device: str | None = None, classes: np.ndarray | None = None) -> None:
+    def __init__(
+        self, device: str | None = None, classes: np.ndarray | None = None
+    ) -> None:
         """Initialize the model wrapper.
 
         Args:
@@ -46,8 +50,10 @@ class BaseModel(ABC):
 
     @abstractmethod
     def predict(self, X: pd.DataFrame) -> np.ndarray:
+        """Predict class labels for the test set."""
         ...
 
     @abstractmethod
     def predict_proba(self, X: pd.DataFrame) -> np.ndarray:
+        """Predict class probabilities for the test set."""
         ...
