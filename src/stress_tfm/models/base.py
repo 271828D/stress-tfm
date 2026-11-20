@@ -42,8 +42,17 @@ class BaseModel(ABC):
     def fit(self, X: pd.DataFrame, y: np.ndarray) -> None:
         """Store context for in-context learning (no weight updates).
 
-        If self._classes is None and y is non-empty, derives classes from y.
-        If X is empty (zero-shot), self._classes must have been set at construction.
+        Class resolution order:
+        1. If self._classes was provided at construction (pipeline mode),
+           it is used as-is — no derivation from y.
+        2. If self._classes is None and y is non-empty, derives classes
+           from y via np.unique(y). (Zero-shot / direct-use mode, e.g.
+           smoke tests, unit tests.)
+        3. If X is empty (zero-shot) and self._classes is None, the
+           classes_ property will raise AttributeError on access.
+
+        Concrete wrappers should call super().fit(X, y) to ensure
+        class resolution is handled uniformly.
         """
         if self._classes is None and len(y) > 0:
             self._classes = np.unique(y)
