@@ -33,11 +33,28 @@ def write_summary(run_dir: Path, results: list[RunResult]) -> pd.DataFrame:
                 "model": r.model,
                 "seed": r.seed,
                 "n_context_subjects": r.n_context,
+                "n_classes_in_ctx": r.n_classes_in_ctx,
                 **r.metrics,
             }
             for r in results
         ]
     )
+
+    # Effective-N report per (task, n_ctx)
+    for (task, n_ctx), group in df.groupby(["task", "n_context_subjects"]):
+        total = len(group)
+        full = (group["n_classes_in_ctx"] >= group["n_classes_in_ctx"].max()).sum()
+        partial = (group["n_classes_in_ctx"] >= 2).sum() - full
+        single = (group["n_classes_in_ctx"] == 1).sum()
+        logger.info(
+            "Effective N [%s, n_ctx=%d]: %d full-coverage, %d partial, %d single-class (of %d)",
+            task,
+            n_ctx,
+            full,
+            partial,
+            single,
+            total,
+        )
 
     out_path = run_dir / "benchmark_summary.csv"
     df.to_csv(out_path, index=False)

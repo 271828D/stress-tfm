@@ -27,6 +27,7 @@ class RunResult:
         y_pred: Predicted class labels.
         y_proba: Predicted class probabilities.
         metrics: Computed metric name-value pairs.
+        n_classes_in_ctx: Number of unique classes present in the context.
     """
 
     task: str
@@ -36,6 +37,7 @@ class RunResult:
     y_pred: np.ndarray
     y_proba: np.ndarray
     metrics: dict[str, float]
+    n_classes_in_ctx: int
 
 
 def evaluate_model(
@@ -48,6 +50,7 @@ def evaluate_model(
     y_ctx: np.ndarray,
     X_test: pd.DataFrame,
     y_test: np.ndarray,
+    n_classes_in_ctx: int = 0,
 ) -> RunResult | None:
     """Fit, predict, and compute metrics for one model run.
 
@@ -61,6 +64,8 @@ def evaluate_model(
         y_ctx: Context labels.
         X_test: Test features.
         y_test: Test labels.
+        n_classes_in_ctx: Number of unique classes present in the context.
+            Used to annotate the result for effective-N reporting.
 
     Returns:
         RunResult on success, None if the model raised an exception.
@@ -85,4 +90,5 @@ def evaluate_model(
         y_pred=y_pred,
         y_proba=y_proba,
         metrics=metrics,
+        n_classes_in_ctx=n_classes_in_ctx,
     )
