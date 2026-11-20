@@ -5,6 +5,7 @@ from __future__ import annotations
 import logging
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 from tqdm import tqdm
 
@@ -57,7 +58,7 @@ def run_grid(
     with tqdm(total=total, desc="Benchmark", unit="run") as pbar:
         for task in tasks:
             target_col: str = TASK_CONFIG[task]["target_col"]
-            classes = __import__("numpy").array(TASK_CONFIG[task]["classes"])
+            classes = np.ndarray = np.array(TASK_CONFIG[task]["classes"])
             task_dir: Path = run_dir / task
 
             for n_ctx in n_context_list:
