@@ -20,7 +20,7 @@ class LightGBMModel(BaseModel):
     """
 
     name: str = "lightgbm"
-    min_context: int = 1
+    min_context: int = 2
 
     def __init__(
         self,
@@ -60,6 +60,7 @@ class LightGBMModel(BaseModel):
         """Train the LightGBM classifier."""
         if len(X) == 0:
             raise RuntimeError("LightGBM cannot train on empty data.")
+        super().fit(X, y)
         self._model.fit(X, y)
         self._fitted = True
 
