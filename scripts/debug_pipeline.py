@@ -24,9 +24,7 @@ split_data = prepare_split(
     feature_cols=feature_cols,
     target_col="label_binary",
 )
-if split_data is None:
-    print("SKIP: context has < 2 classes. Try a different seed.")
-    raise SystemExit(0)
+assert split_data is not None, "prepare_split should not return None"
 
 print(f"Context: {split_data.X_ctx.shape} | Test: {split_data.X_test.shape}")
 print(f"Context subjects: {split_data.ctx_df['subject_id'].unique().tolist()}")
