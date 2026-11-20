@@ -24,6 +24,7 @@ class SplitData(NamedTuple):
         X_test: Test feature matrix.
         y_ctx: Context labels.
         y_test: Test labels.
+        n_classes_in_ctx: Number of unique classes present in context.
     """
 
     ctx_df: pd.DataFrame
@@ -32,6 +33,7 @@ class SplitData(NamedTuple):
     X_test: pd.DataFrame
     y_ctx: np.ndarray
     y_test: np.ndarray
+    n_classes_in_ctx: int
 
 
 def prepare_split(
@@ -76,6 +78,7 @@ def prepare_split(
         X_test=X_test,
         y_ctx=y_ctx,
         y_test=y_test,
+        n_classes_in_ctx=len(np.unique(y_ctx)),
     )
 
 

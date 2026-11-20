@@ -112,6 +112,7 @@ def run_grid(
                             split_data.y_ctx,
                             split_data.X_test,
                             split_data.y_test,
+                            n_classes_in_ctx=split_data.n_classes_in_ctx,
                         )
                         if result is not None:
                             results.append(result)
