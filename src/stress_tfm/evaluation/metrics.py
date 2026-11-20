@@ -19,18 +19,30 @@ def compute_metrics(
     y_pred: np.ndarray,
     y_proba: np.ndarray,
 ) -> dict[str, float]:
-    """Calculate evaluation metrics for binary or multiclass classification."""
+    """Calculate evaluation metrics for binary or multiclass classification.
+
+    Returns NaN for roc_auc when it is undefined:
+    - Single-class predictions (all mass on one class).
+    - y_proba column count doesn't match the task's class count
+      (partial-class context, e.g. 2-of-3 classes present).
+    """
     n_classes = len(np.unique(y_true))
 
     if n_classes == 2:
         avg = "binary"
         tn, fp, fn, tp = confusion_matrix(y_true, y_pred).ravel()
         specificity = tn / (tn + fp) if (tn + fp) > 0 else 0.0
-        roc_auc = roc_auc_score(y_true, y_proba[:, 1])
+        try:
+            roc_auc = roc_auc_score(y_true, y_proba[:, 1])
+        except ValueError:
+            roc_auc = float("nan")
     else:
         avg = "macro"
         specificity = None
-        roc_auc = roc_auc_score(y_true, y_proba, multi_class="ovr", average="macro")
+        try:
+            roc_auc = roc_auc_score(y_true, y_proba, multi_class="ovr", average="macro")
+        except ValueError:
+            roc_auc = float("nan")
 
     metrics: dict[str, float] = {
         "f1": f1_score(y_true, y_pred, average=avg, zero_division=0),
