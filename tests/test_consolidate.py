@@ -2,12 +2,19 @@
 
 from __future__ import annotations
 
+import importlib.util
 from pathlib import Path
 
 import pandas as pd
 import pytest
 
-from scripts.consolidate_predictions import _parse_path
+_spec = importlib.util.spec_from_file_location(
+    "consolidate_predictions",
+    Path(__file__).parent.parent / "scripts" / "consolidate_predictions.py",
+)
+_mod = importlib.util.module_from_spec(_spec)
+_spec.loader.exec_module(_mod)
+_parse_path = _mod._parse_path
 
 
 class TestParsePath:
