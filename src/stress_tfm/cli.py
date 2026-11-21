@@ -6,6 +6,7 @@ import argparse
 import logging
 import os
 import sys
+from pathlib import Path
 from typing import TypedDict
 
 from stress_tfm.config import (
@@ -66,6 +67,12 @@ def main() -> None:
     run.add_argument("--n-context", type=int, nargs="+", default=None)
     run.add_argument("--tasks", default="all")
     run.add_argument("--feature-cols", default=None)
+    run.add_argument(
+        "--feature-set",
+        default=None,
+        help="Feature set name from FEATURE_SETS (e.g., 'ecg', 'all'). "
+        "Overrides --feature-cols if both are given.",
+    )
     run.add_argument("--subject-col", default="subject_id")
     run.add_argument("--output", default=None)
     run.add_argument("--device", choices=["cpu", "cuda"], default="cuda")
@@ -104,6 +111,17 @@ def main() -> None:
             if args.feature_cols
             else None
         )
+        if args.feature_set:
+            from stress_tfm.config import FEATURE_SETS
+
+            if args.feature_set not in FEATURE_SETS:
+                valid = ", ".join(FEATURE_SETS.keys())
+                parser.error(
+                    f"Unknown feature set '{args.feature_set}'. Valid: {valid}"
+                )
+            feature_cols = FEATURE_SETS[args.feature_set]
+            # Nest output under feature_set subdirectory
+            output = str(Path(output) / args.feature_set)
 
         from stress_tfm.evaluation.runner import run_benchmark
 
