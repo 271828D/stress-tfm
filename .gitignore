@@ -26,3 +26,6 @@ results/
 
 # Config
 src/stress_tfm/config.py
+
+# Local docs (paper drafts, method notes)
+docs/
