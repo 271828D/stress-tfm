@@ -57,6 +57,18 @@ def write_summary(run_dir: Path, results: list[RunResult]) -> pd.DataFrame:
         )
 
     out_path = run_dir / "benchmark_summary.csv"
+
+    # Merge with existing results (resume-friendly)
+    key_cols = ["task", "model", "seed", "n_context_subjects"]
+    if out_path.exists():
+        existing = pd.read_csv(out_path)
+        df = (
+            pd.concat([existing, df], ignore_index=True)
+            .drop_duplicates(subset=key_cols, keep="last")
+            .sort_values(key_cols)
+            .reset_index(drop=True)
+        )
+
     df.to_csv(out_path, index=False)
     logger.info("Summary saved to %s: %d rows", out_path, len(df))
     return df
