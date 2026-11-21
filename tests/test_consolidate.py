@@ -15,6 +15,7 @@ _spec = importlib.util.spec_from_file_location(
 _mod = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(_mod)
 _parse_path = _mod._parse_path
+_sanity_checks = _mod._sanity_checks
 
 
 class TestParsePath:
@@ -85,3 +86,68 @@ class TestColumnSelection:
         )
         proba_cols = [c for c in df.columns if c.startswith("y_proba_")]
         assert proba_cols == ["y_proba_c0", "y_proba_c1", "y_proba_c2"]
+
+
+class TestSanityChecks:
+    """Tests for _sanity_checks warning logic."""
+
+    def test_missing_model_warns(self, capsys: pytest.CaptureFixture[str]) -> None:
+        df = pd.DataFrame(
+            {
+                "task": ["binary"] * 4,
+                "model": ["tabpfn", "tabpfn", "lightgbm", "lightgbm"],
+                "seed": [0, 1, 0, 1],
+                "n_context": [6, 6, 6, 6],
+                "n_classes_in_ctx": [2, 2, 2, 2],
+                "file_id": ["a", "b", "c", "d"],
+                "y_true": [0, 1, 0, 1],
+                "y_pred": [0, 1, 0, 1],
+                "y_proba_c0": [0.7, 0.3, 0.8, 0.2],
+                "y_proba_c1": [0.3, 0.7, 0.2, 0.8],
+            }
+        )
+        _sanity_checks(df, expected_models=["tabpfn", "tabdpt"])
+        captured = capsys.readouterr()
+        assert "tabdpt" in captured.out
+        assert "missing" in captured.out
+
+    def test_nan_n_classes_warns(self, capsys: pytest.CaptureFixture[str]) -> None:
+        df = pd.DataFrame(
+            {
+                "task": ["binary"] * 2,
+                "model": ["tabpfn", "tabpfn"],
+                "seed": [0, 1],
+                "n_context": [6, 6],
+                "n_classes_in_ctx": [2.0, float("nan")],
+                "file_id": ["a", "b"],
+                "y_true": [0, 1],
+                "y_pred": [0, 1],
+                "y_proba_c0": [0.7, 0.3],
+                "y_proba_c1": [0.3, 0.7],
+            }
+        )
+        _sanity_checks(df)
+        captured = capsys.readouterr()
+        assert "n_classes_in_ctx" in captured.out
+        assert "NaN" in captured.out
+
+    def test_no_warnings_on_clean_data(
+        self, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        df = pd.DataFrame(
+            {
+                "task": ["binary"] * 4,
+                "model": ["tabpfn", "tabpfn", "lightgbm", "lightgbm"],
+                "seed": [0, 1, 0, 1],
+                "n_context": [6, 6, 6, 6],
+                "n_classes_in_ctx": [2, 2, 2, 2],
+                "file_id": ["a", "b", "c", "d"],
+                "y_true": [0, 1, 0, 1],
+                "y_pred": [0, 1, 0, 1],
+                "y_proba_c0": [0.7, 0.3, 0.8, 0.2],
+                "y_proba_c1": [0.3, 0.7, 0.2, 0.8],
+            }
+        )
+        _sanity_checks(df, expected_models=["tabpfn", "lightgbm"])
+        captured = capsys.readouterr()
+        assert "WARNING" not in captured.out
