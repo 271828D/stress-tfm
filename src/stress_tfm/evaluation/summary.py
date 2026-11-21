@@ -34,6 +34,7 @@ def write_summary(run_dir: Path, results: list[RunResult]) -> pd.DataFrame:
                 "seed": r.seed,
                 "n_context_subjects": r.n_context,
                 "n_classes_in_ctx": r.n_classes_in_ctx,
+                "feature_set": r.feature_set,
                 **r.metrics,
             }
             for r in results

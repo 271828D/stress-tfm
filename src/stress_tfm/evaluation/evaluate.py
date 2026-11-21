@@ -28,6 +28,7 @@ class RunResult:
         y_proba: Predicted class probabilities.
         metrics: Computed metric name-value pairs.
         n_classes_in_ctx: Number of unique classes present in the context.
+        feature_set: Feature set name used for this run (e.g., "ecg", "all").
     """
 
     task: str
@@ -38,6 +39,7 @@ class RunResult:
     y_proba: np.ndarray
     metrics: dict[str, float]
     n_classes_in_ctx: int
+    feature_set: str = "all"
 
 
 def evaluate_model(
@@ -51,6 +53,7 @@ def evaluate_model(
     X_test: pd.DataFrame,
     y_test: np.ndarray,
     n_classes_in_ctx: int = 0,
+    feature_set: str = "all",
 ) -> RunResult | None:
     """Fit, predict, and compute metrics for one model run.
 
@@ -66,6 +69,7 @@ def evaluate_model(
         y_test: Test labels.
         n_classes_in_ctx: Number of unique classes present in the context.
             Used to annotate the result for effective-N reporting.
+        feature_set: Feature set name (e.g., "ecg", "all"). Defaults to "all".
 
     Returns:
         RunResult on success, None if the model raised an exception.
