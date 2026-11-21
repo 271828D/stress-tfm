@@ -1,12 +1,13 @@
 """Central configuration for the stress-tfm benchmark."""
 
 from pathlib import Path
+from typing import Any
 
 # ─── Data ─────────────────────────────────────────────────────────
 SR = 500
-DATA_DIR = Path("../data/raw/Physiological")
-LABELS_FILE = Path("../data/raw/labels.csv")
-MASTER_TABLE = Path("../data/master_table.parquet")
+DATA_DIR = Path("data/raw/Physiological")
+LABELS_FILE = Path("data/raw/labels.csv")
+MASTER_TABLE = Path("data/master_table.parquet")
 
 # ─── Feature sets (132 total) ─────────────────────────────────────
 ECG_FEATURES: list[str] = [
@@ -79,9 +80,9 @@ MODELS = ["kumo", "causilo", "tabdpt", "tabicl", "tabpfn", "lightgbm"]
 
 # ─── Tasks ────────────────────────────────────────────────────────
 TASKS = ["binary", "3class"]
-TASK_CONFIG: dict[str, dict] = {
-    "binary": {"target_col": "label_binary", "n_classes": 2},
-    "3class": {"target_col": "label_3class", "n_classes": 3},
+TASK_CONFIG: dict[str, dict[str, Any]] = {
+    "binary": {"target_col": "label_binary", "classes": [0, 1]},
+    "3class": {"target_col": "label_3class", "classes": [0, 1, 2]},
 }
 
 # ─── Paper 1 ──────────────────────────────────────────────────────
@@ -89,7 +90,7 @@ PAPER1_CONTEXT_SIZES = [1, 6, 16, 32, 49, 58]       # 1, 10, 25, 50, 75, 90%
 PAPER1_SEEDS = list(range(10))
 PAPER1_FEATURE_SETS = ["all"]
 PAPER1_TASKS = TASKS
-PAPER1_OUTPUT = Path("../results/paper1")
+PAPER1_OUTPUT = Path("results/paper1")
 
 # ─── Paper 2 ──────────────────────────────────────────────────────
 PAPER2_CONTEXT_SIZES = [1, 6, 13, 16, 20, 26, 32, 39, 46, 49, 52, 58]
@@ -99,5 +100,5 @@ PAPER2_TASKS = TASKS
 PAPER2_OUTPUT = Path("../results/paper2")
 
 # ─── Paths ────────────────────────────────────────────────────────
-RESULTS_DIR = Path("../results")
-FIGURES_DIR = Path("../plots")
+RESULTS_DIR = Path("results")
+FIGURES_DIR = Path("plots")
