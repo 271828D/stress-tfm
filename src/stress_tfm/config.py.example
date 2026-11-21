@@ -97,7 +97,7 @@ PAPER2_CONTEXT_SIZES = [1, 6, 13, 16, 20, 26, 32, 39, 46, 49, 52, 58]
 PAPER2_SEEDS = list(range(20))
 PAPER2_FEATURE_SETS = list(FEATURE_SETS.keys())
 PAPER2_TASKS = TASKS
-PAPER2_OUTPUT = Path("../results/paper2")
+PAPER2_OUTPUT = Path("results/paper2")
 
 # ─── Paths ────────────────────────────────────────────────────────
 RESULTS_DIR = Path("results")
