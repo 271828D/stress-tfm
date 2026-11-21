@@ -36,11 +36,66 @@ def _parse_path(path: Path, paper_dir: Path) -> dict[str, object]:
     }
 
 
-def consolidate(paper_dir: Path) -> list[Path]:
+def _warn(msg: str) -> None:
+    """Print a warning to stdout."""
+    print(f"  WARNING: {msg}")
+
+
+def _sanity_checks(df: pd.DataFrame, expected_models: list[str] | None = None) -> None:
+    """Print warnings for potential issues. Does not raise.
+
+    Args:
+        df: Consolidated predictions DataFrame.
+        expected_models: Optional list of model names that should be present.
+    """
+    # 1. Model coverage
+    if expected_models:
+        present = set(df["model"].unique())
+        missing_models = set(expected_models) - present
+        if missing_models:
+            _warn(f"Models missing from results: {sorted(missing_models)}")
+
+    # 2. n_classes_in_ctx join check
+    if "n_classes_in_ctx" in df.columns:
+        nan_count = df["n_classes_in_ctx"].isna().sum()
+        if nan_count > 0:
+            _warn(
+                f"n_classes_in_ctx is NaN for {nan_count:,} rows "
+                f"({100 * nan_count / len(df):.1f}%). "
+                f"Summary join may have failed."
+            )
+
+    # 3. Row count uniformity per (model, n_context)
+    counts = df.groupby(["model", "n_context"])["seed"].nunique()
+    for (model, n_ctx), n_seeds in counts.items():
+        expected_seeds = counts.groupby("model").transform("max")[(model, n_ctx)]
+        if n_seeds < expected_seeds:
+            _warn(
+                f"{model} at n_ctx={n_ctx}: only {n_seeds} seeds "
+                f"(expected {expected_seeds}). Check for failed runs."
+            )
+
+    # 4. Probability columns sum to ~1
+    proba_cols = [c for c in df.columns if c.startswith("y_proba_")]
+    if proba_cols:
+        proba_sum = df[proba_cols].sum(axis=1)
+        bad = (proba_sum - 1.0).abs() > 0.01
+        if bad.any():
+            _warn(
+                f"{bad.sum():,} rows have y_proba columns not summing to 1 "
+                f"(max deviation: {(proba_sum - 1.0).abs().max():.4f})"
+            )
+
+
+def consolidate(
+    paper_dir: Path,
+    expected_models: list[str] | None = None,
+) -> list[Path]:
     """Read all predictions.csv and write per-task parquet files.
 
     Args:
         paper_dir: Paper output directory (e.g., results/paper1).
+        expected_models: Optional list of model names to check coverage.
 
     Returns:
         List of written parquet file paths.
@@ -56,7 +111,6 @@ def consolidate(paper_dir: Path) -> list[Path]:
         meta = _parse_path(csv_path, paper_dir)
         df = pd.read_csv(csv_path)
 
-        # Keep only prediction columns + y_proba_*
         proba_cols = [c for c in df.columns if c.startswith("y_proba_")]
         keep = PRED_COLS + proba_cols
         df = df[keep].copy()
@@ -73,7 +127,6 @@ def consolidate(paper_dir: Path) -> list[Path]:
 
     all_preds = pd.concat(frames, ignore_index=True)
 
-    # Join n_classes_in_ctx from summary
     if summary is not None:
         all_preds = all_preds.merge(
             summary[
@@ -84,7 +137,6 @@ def consolidate(paper_dir: Path) -> list[Path]:
             how="left",
         ).drop(columns=["n_context_subjects"])
 
-    # Reorder columns
     proba_cols = [c for c in all_preds.columns if c.startswith("y_proba_")]
     col_order = (
         ["task", "model", "seed", "n_context", "n_classes_in_ctx"]
@@ -93,7 +145,10 @@ def consolidate(paper_dir: Path) -> list[Path]:
     )
     all_preds = all_preds[[c for c in col_order if c in all_preds.columns]]
 
-    # Write per-task parquet
+    # Sanity checks (warnings only)
+    print("Running sanity checks...")
+    _sanity_checks(all_preds, expected_models)
+
     written: list[Path] = []
     for task, group in all_preds.groupby("task"):
         out_path = paper_dir / f"predictions_{task}.parquet"
@@ -111,6 +166,11 @@ def main() -> None:
         "--paper", type=int, required=True, help="Paper number (1 or 2)"
     )
     parser.add_argument("--output-dir", default=None, help="Override output directory")
+    parser.add_argument(
+        "--models",
+        default=None,
+        help="Comma-separated expected model names (for coverage check)",
+    )
     args = parser.parse_args()
 
     paper_dir = (
@@ -120,8 +180,12 @@ def main() -> None:
     if not paper_dir.exists():
         raise SystemExit(f"Directory not found: {paper_dir}")
 
+    expected_models: list[str] | None = None
+    if args.models:
+        expected_models = [m.strip() for m in args.models.split(",")]
+
     print(f"Consolidating predictions from {paper_dir}/")
-    written = consolidate(paper_dir)
+    written = consolidate(paper_dir, expected_models=expected_models)
     if written:
         print(f"Done. {len(written)} parquet file(s) written.")
 
